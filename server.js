@@ -3,6 +3,9 @@ const app = express();
 const http = require('http');
 const { Server } = require('socket.io');
 
+const server = http.createServer(app);
+const io = new Server(server);
+
 // --- In-memory state for the game ---
 const rooms = {};
 
@@ -13,9 +16,6 @@ app.use(express.static('public'));
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
-
-const server = http.createServer(app);
-const io = new Server(server);
 
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
@@ -58,7 +58,6 @@ io.on('connection', (socket) => {
     socket.on('resetGame', ({ room }) => {
         if (rooms[room]) {
             rooms[room].revealed = false;
-            // Set all votes back to null
             for (const user in rooms[room].votes) {
                 rooms[room].votes[user] = null;
             }
@@ -68,9 +67,8 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log('A user disconnected:', socket.id);
-        // We'll handle a more sophisticated cleanup later
     });
 });
 
-// --- Vercel requires us to export the app instead of listening on a port ---
-module.exports = app;
+// We export the HTTP server instance for Vercel to run
+module.exports = server;
