@@ -14,11 +14,7 @@ const io = new Server(server, {
 // --- In-memory state for the game ---
 const rooms = {};
 
-// Handle HTTP requests (Vercel will handle static files automatically)
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/public/index.html');
-});
-
+// Handle Socket.IO connections
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
 
