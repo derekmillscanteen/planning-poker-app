@@ -38,6 +38,13 @@ let currentFacilitator = '';
 // This tells the browser to explicitly connect to the current host
 const socket = io(window.location.origin);
 
+socket.on('connect', () => {
+  console.log('Successfully connected to the server!');
+});
+
+socket.on('connect_error', (err) => {
+  console.error('Failed to connect to the server:', err);
+});
 socket.on('updateState', (state) => {
     allVotes = state.votes;
     hasRevealed = state.revealed;
