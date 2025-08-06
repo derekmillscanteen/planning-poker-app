@@ -123,16 +123,10 @@ function updateUI(roomState) {
 
 // Corrected function to use the parameters passed to it
 function checkInputsAndProceed(roomName, username, emitEvent) {
-    // Correctly use the roomName and username parameters
-    const trimmedRoomName = roomName.trim();
-    const trimmedUsername = username.trim();
+    if (!roomName || !username) return alert('Room and name required');
 
-    if (!trimmedRoomName || !trimmedUsername) {
-        return alert('Please enter both a room name and your username.');
-    }
-
-    currentRoom = trimmedRoomName;
-    myUsername = trimmedUsername;
+    currentRoom = roomName;
+    myUsername = username;
 
     const remember = document.getElementById('remember-me')?.checked;
     if (remember) {
@@ -143,6 +137,7 @@ function checkInputsAndProceed(roomName, username, emitEvent) {
         localStorage.removeItem('pokerRoom');
     }
 
+    // This is the key change: ensure the parameters are used correctly
     socket.emit(emitEvent, { room: currentRoom, username: myUsername });
     currentRoomNameSpan.textContent = currentRoom;
     roomSelectionDiv.style.display = 'none';

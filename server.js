@@ -15,7 +15,10 @@ const rooms = {};
 
 app.use(express.static('public'));
 
-
+// This line is crucial for your setup. It explicitly serves index.html.
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
+});
 
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
@@ -54,22 +57,22 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('resetGame', ({ room }) => {
+    socket.on('resetVotes', ({ room }) => {
         if (rooms[room]) {
-            rooms[room].revealed = false;
             for (const user in rooms[room].votes) {
                 rooms[room].votes[user] = null;
             }
+            rooms[room].revealed = false;
             io.to(room).emit('updateState', rooms[room]);
         }
     });
 
     socket.on('disconnect', () => {
         console.log('A user disconnected:', socket.id);
+        // Add cleanup logic here if needed
     });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+server.listen(3000, () => {
+    console.log('Server is running on port 3000');
 });
