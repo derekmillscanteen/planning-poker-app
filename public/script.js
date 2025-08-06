@@ -22,7 +22,7 @@ const facilitatorDisplay = document.getElementById('facilitator-display');
 
 // Dark Mode Elements
 const darkModeToggle = document.getElementById('dark-mode-toggle');
-const rootElement = document.documentElement; // This is the fix!
+const rootElement = document.documentElement;
 const themeLabel = document.querySelector('.theme-label');
 
 // --- Define our app's state variables ---
@@ -39,11 +39,11 @@ let currentFacilitator = '';
 const socket = io(window.location.origin);
 
 socket.on('connect', () => {
-  console.log('Successfully connected to the server!');
+    console.log('Successfully connected to the server!');
 });
 
 socket.on('connect_error', (err) => {
-  console.error('Failed to connect to the server:', err);
+    console.error('Failed to connect to the server:', err);
 });
 socket.on('updateState', (state) => {
     allVotes = state.votes;
@@ -71,6 +71,8 @@ function selectCard(selectedCard, value) {
     }
     
     myVote = value;
+    // THIS IS THE FIX. We update the UI immediately for instant feedback.
+    updateUI(); 
     socket.emit('vote', { room: currentRoom, username: myUsername, vote: myVote });
 }
 
