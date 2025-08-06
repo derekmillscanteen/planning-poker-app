@@ -35,7 +35,8 @@ let allVotes = {};
 let hasRevealed = false;
 let currentFacilitator = '';
 
-const socket = io();
+// This tells the browser to explicitly connect to the current host
+const socket = io(window.location.origin);
 
 socket.on('updateState', (state) => {
     allVotes = state.votes;
