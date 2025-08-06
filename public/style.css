@@ -478,3 +478,9 @@ input:checked + .slider:before {
         gap: 5px;
     }
 }
+
+.card.selected {
+    border: 2px solid #3498db; /* A blue border */
+    transform: scale(1.1); /* Makes the card slightly larger */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
