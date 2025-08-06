@@ -11,10 +11,14 @@ const io = new Server(server, {
     }
 });
 
-// In-memory state for the game
+// --- In-memory state for the game ---
 const rooms = {};
 
-// Handle Socket.IO connections
+// Handle HTTP requests (Vercel will handle static files automatically)
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/public/index.html');
+});
+
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
 
@@ -69,7 +73,4 @@ io.on('connection', (socket) => {
 });
 
 // We export the HTTP server instance for Vercel to run
-module.exports = (req, res) => {
-    app(req, res);
-    io.emit('connection'); // This is a workaround for Vercel's stateless nature
-};
+module.exports = server;
