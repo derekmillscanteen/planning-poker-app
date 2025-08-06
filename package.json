@@ -1,5 +1,5 @@
 {
-  "name": "Planning Poker",
+  "name": "planning-poker-app",
   "version": "1.0.0",
   "description": "A real-time planning poker application.",
   "main": "server.js",
@@ -10,6 +10,6 @@
     "express": "^4.19.2",
     "socket.io": "^4.7.5"
   },
-  "author": "Derek Mills",
+  "author": "Your Name",
   "license": "ISC"
 }

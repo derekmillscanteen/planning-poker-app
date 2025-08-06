@@ -33,7 +33,7 @@ io.on('connection', (socket) => {
                 revealed: false
             };
             socket.join(room);
-            // This is the line that was fixed. It now broadcasts to the entire room.
+            // FIX: This now broadcasts to the entire room, not just the creator
             io.to(room).emit('updateState', rooms[room]);
         }
     });

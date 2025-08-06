@@ -35,7 +35,6 @@ let allVotes = {};
 let hasRevealed = false;
 let currentFacilitator = '';
 
-// This tells the browser to explicitly connect to the current host
 const socket = io(window.location.origin);
 
 socket.on('connect', () => {
@@ -45,6 +44,7 @@ socket.on('connect', () => {
 socket.on('connect_error', (err) => {
     console.error('Failed to connect to the server:', err);
 });
+
 socket.on('updateState', (state) => {
     allVotes = state.votes;
     hasRevealed = state.revealed;
@@ -70,18 +70,16 @@ function selectCard(selectedCard, value) {
         return;
     }
     
-    // Remove 'selected' class from all cards first
+    // Ensure only one card is selected at a time
     document.querySelectorAll('.card').forEach(card => {
         card.classList.remove('selected');
     });
 
-    // Set myVote and add 'selected' class to the card that was clicked
     myVote = value;
-    selectedCard.classList.add('selected');
+    selectedCard.classList.add('selected'); // Adds the visual feedback instantly
     
     socket.emit('vote', { room: currentRoom, username: myUsername, vote: myVote });
 }
-
 
 function displayVotes() {
     votesDisplay.innerHTML = '';
@@ -175,8 +173,15 @@ function updateUI() {
     allCards.forEach(card => {
         if (hasRevealed) {
             card.classList.add('revealed');
+            card.classList.remove('selected');
         } else {
             card.classList.remove('revealed');
+            // FIX: This re-selects the card if a vote has been made
+            if (myVote !== null && card.textContent === myVote) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
         }
     });
 }
@@ -226,6 +231,7 @@ function checkInputsAndProceed(roomName, username, emitEvent) {
     myUsername = username;
     
     saveUsername(myUsername);
+    saveRoom(currentRoom); // FIX: Save room name to localStorage
 
     socket.emit(emitEvent, { room: currentRoom, username: myUsername });
     
@@ -294,6 +300,43 @@ function loadUsername() {
     }
 }
 
+function saveRoom(room) {
+    try {
+        localStorage.setItem('pokerRoom', room);
+    } catch (e) {
+        console.error('Error saving room to localStorage:', e);
+    }
+}
+
+function rejoinRoomOnLoad() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomFromUrl = urlParams.get('room');
+    const savedUsername = localStorage.getItem('pokerUsername');
+    const savedRoom = localStorage.getItem('pokerRoom');
+
+    if (savedUsername && savedRoom) {
+        currentRoom = savedRoom;
+        myUsername = savedUsername;
+        
+        socket.emit('joinRoom', { room: currentRoom, username: myUsername });
+
+        currentRoomNameSpan.textContent = currentRoom;
+        roomSelectionDiv.style.display = 'none';
+        gameAreaDiv.style.display = 'block';
+        createCards();
+    } else if (roomFromUrl && savedUsername) {
+        currentRoom = roomFromUrl;
+        myUsername = savedUsername;
+
+        socket.emit('joinRoom', { room: currentRoom, username: myUsername });
+
+        currentRoomNameSpan.textContent = currentRoom;
+        roomSelectionDiv.style.display = 'none';
+        gameAreaDiv.style.display = 'block';
+        createCards();
+    }
+}
+
 function checkUrlForRoomName() {
     const urlParams = new URLSearchParams(window.location.search);
     const roomNameFromUrl = urlParams.get('room');
@@ -307,3 +350,4 @@ function checkUrlForRoomName() {
 loadUsername();
 checkUrlForRoomName();
 loadTheme();
+rejoinRoomOnLoad(); // FIX: Call this function on page load
