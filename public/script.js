@@ -70,11 +70,18 @@ function selectCard(selectedCard, value) {
         return;
     }
     
+    // Remove 'selected' class from all cards first
+    document.querySelectorAll('.card').forEach(card => {
+        card.classList.remove('selected');
+    });
+
+    // Set myVote and add 'selected' class to the card that was clicked
     myVote = value;
-    // THIS IS THE FIX. We update the UI immediately for instant feedback.
-    updateUI(); 
+    selectedCard.classList.add('selected');
+    
     socket.emit('vote', { room: currentRoom, username: myUsername, vote: myVote });
 }
+
 
 function displayVotes() {
     votesDisplay.innerHTML = '';
@@ -166,14 +173,10 @@ function updateUI() {
     
     const allCards = document.querySelectorAll('.card');
     allCards.forEach(card => {
-        card.classList.remove('selected');
         if (hasRevealed) {
             card.classList.add('revealed');
         } else {
             card.classList.remove('revealed');
-            if (myVote !== null && card.textContent === myVote) {
-                card.classList.add('selected');
-            }
         }
     });
 }
