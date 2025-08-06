@@ -1,71 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planning Poker</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Planning Poker</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div id="app">
-        <div id="room-selection">
-            <h1>Planning Poker</h1>
-            <div class="input-group">
-                <label for="username-input">Your Name:</label>
-                <input type="text" id="username-input" placeholder="Enter your name">
-            </div>
+  <div id="app">
+    <div id="room-selection">
+      <h1>Planning Poker</h1>
+      <div class="input-group">
+        <label for="username-input">Your Name:</label>
+        <input type="text" id="username-input" placeholder="Enter your name" />
+      </div>
 
-            <div class="room-action-section">
-                <h2>Create a Room</h2>
-                <div class="input-group">
-                    <label for="create-room-name-input">Room Name:</label>
-                    <input type="text" id="create-room-name-input" placeholder="Enter a new room name">
-                </div>
-                <button id="create-room-btn">Create Room</button>
-            </div>
+      <div class="input-group">
+        <label><input type="checkbox" id="remember-me" /> Remember me</label>
+      </div>
 
-            <div class="room-action-section">
-                <h2>Join a Room</h2>
-                <div class="input-group">
-                    <label for="join-room-name-input">Room Name:</label>
-                    <input type="text" id="join-room-name-input" placeholder="Enter an existing room name">
-                </div>
-                <button id="join-room-btn">Join Room</button>
-            </div>
+      <div class="room-action-section">
+        <h2>Create a Room</h2>
+        <div class="input-group">
+          <label for="create-room-name-input">Room Name:</label>
+          <input type="text" id="create-room-name-input" placeholder="Enter a new room name" />
         </div>
+        <button id="create-room-btn">Create Room</button>
+      </div>
 
-        <div id="game-area" class="hidden">
-            <div class="header">
-                <span id="current-room-name"></span>
-                <span id="facilitator-display"></span>
-            </div>
-
-            <div id="participants-list"></div>
-            <div id="cards-container"></div>
-            <div id="votes-display"></div>
-            <div id="vote-summary"></div>
-
-            <div id="control-buttons" class="hidden">
-                <button id="reveal-btn">Reveal Votes</button>
-                <button id="reset-btn">Reset Game</button>
-            </div>
-
-            <div class="share-container">
-                <button id="share-btn">Share Room</button>
-                <span id="copy-feedback">Link Copied!</span>
-            </div>
+      <div class="room-action-section">
+        <h2>Join a Room</h2>
+        <div class="input-group">
+          <label for="join-room-name-input">Room Name:</label>
+          <input type="text" id="join-room-name-input" placeholder="Enter an existing room name" />
         </div>
-
-        <div id="dark-mode-toggle-container">
-            <label class="switch">
-                <input type="checkbox" id="dark-mode-toggle">
-                <span class="slider round"></span>
-            </label>
-            <span class="theme-label">Light Mode</span>
-        </div>
+        <button id="join-room-btn">Join Room</button>
+      </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js"></script>
+    <div id="game-area" class="hidden">
+      <div class="header">
+        <span id="current-room-name"></span>
+        <span id="facilitator-display"></span>
+      </div>
+
+      <div id="participants-list"></div>
+      <div id="cards-container"></div>
+      <div id="votes-display"></div>
+      <div id="vote-summary"></div>
+
+      <div id="control-buttons" class="hidden">
+        <button id="reveal-btn">Reveal Votes</button>
+        <button id="reset-btn">Reset Game</button>
+      </div>
+
+      <div class="share-container">
+        <button id="share-btn">Share Room</button>
+        <span id="copy-feedback">Link Copied!</span>
+      </div>
+    </div>
+
+    <div id="dark-mode-toggle-container">
+      <label class="switch">
+        <input type="checkbox" id="dark-mode-toggle" />
+        <span class="slider round"></span>
+      </label>
+      <span class="theme-label">Light Mode</span>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
