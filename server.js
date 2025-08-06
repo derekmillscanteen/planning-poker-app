@@ -33,7 +33,8 @@ io.on('connection', (socket) => {
                 revealed: false
             };
             socket.join(room);
-            socket.emit('updateState', rooms[room]);
+            // This is the line that was fixed. It now broadcasts to the entire room.
+            io.to(room).emit('updateState', rooms[room]);
         }
     });
 
@@ -41,7 +42,6 @@ io.on('connection', (socket) => {
         if (rooms[room]) {
             rooms[room].votes[username] = null;
             socket.join(room);
-            socket.emit('updateState', rooms[room]);
             io.to(room).emit('updateState', rooms[room]);
         }
     });
