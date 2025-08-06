@@ -6,18 +6,15 @@ const { Server } = require('socket.io');
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: '*', // Allows all origins
+        origin: '*',
         methods: ['GET', 'POST']
     }
 });
 
-// --- In-memory state for the game ---
 const rooms = {};
 
-// Serve the static files from the 'public' directory
 app.use(express.static('public'));
 
-// This is the root route for our app
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
@@ -33,7 +30,6 @@ io.on('connection', (socket) => {
                 revealed: false
             };
             socket.join(room);
-            // FIX: This now broadcasts to the entire room, not just the creator
             io.to(room).emit('updateState', rooms[room]);
         }
     });
@@ -75,7 +71,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// Start the server on the port provided by Render
-server.listen(process.env.PORT || 3000, () => {
-    console.log(`Server is running on port ${process.env.PORT || 3000}`);
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });

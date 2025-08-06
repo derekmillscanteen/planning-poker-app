@@ -1,4 +1,5 @@
-// --- Get references to our HTML elements ---
+// Updated script.js with UI/UX enhancements, accessibility, avatars, vote status, card flip animations
+
 const roomSelectionDiv = document.getElementById('room-selection');
 const gameAreaDiv = document.getElementById('game-area');
 
@@ -20,12 +21,10 @@ const copyFeedbackSpan = document.getElementById('copy-feedback');
 const voteSummaryDiv = document.getElementById('vote-summary');
 const facilitatorDisplay = document.getElementById('facilitator-display');
 
-// Dark Mode Elements
 const darkModeToggle = document.getElementById('dark-mode-toggle');
 const rootElement = document.documentElement;
 const themeLabel = document.querySelector('.theme-label');
 
-// --- Define our app's state variables ---
 const cardValues = ['1', '2', '3', '5', '8', '13', '21', '?'];
 let currentRoom = '';
 let myVote = null;
@@ -37,13 +36,8 @@ let currentFacilitator = '';
 
 const socket = io(window.location.origin);
 
-socket.on('connect', () => {
-    console.log('Successfully connected to the server!');
-});
-
-socket.on('connect_error', (err) => {
-    console.error('Failed to connect to the server:', err);
-});
+socket.on('connect', () => console.log('Connected'));
+socket.on('connect_error', (err) => console.error('Connection error:', err));
 
 socket.on('updateState', (state) => {
     allVotes = state.votes;
@@ -53,155 +47,119 @@ socket.on('updateState', (state) => {
     updateUI();
 });
 
-// --- UI-related functions ---
 function createCards() {
     cardsContainer.innerHTML = '';
     cardValues.forEach(value => {
-        const cardDiv = document.createElement('div');
-        cardDiv.classList.add('card');
-        cardDiv.textContent = value;
-        cardDiv.addEventListener('click', () => selectCard(cardDiv, value));
-        cardsContainer.appendChild(cardDiv);
+        const cardWrapper = document.createElement('div');
+        cardWrapper.classList.add('card');
+        cardWrapper.setAttribute('tabindex', '0');
+        cardWrapper.setAttribute('role', 'button');
+        cardWrapper.setAttribute('aria-label', `Vote ${value}`);
+
+        const cardFront = document.createElement('div');
+        cardFront.classList.add('card-face', 'front');
+        cardFront.textContent = '?';
+
+        const cardBack = document.createElement('div');
+        cardBack.classList.add('card-face', 'back');
+        cardBack.textContent = value;
+
+        const inner = document.createElement('div');
+        inner.classList.add('card-inner');
+        inner.appendChild(cardFront);
+        inner.appendChild(cardBack);
+
+        cardWrapper.appendChild(inner);
+        cardWrapper.addEventListener('click', () => selectCard(cardWrapper, value));
+        cardWrapper.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') selectCard(cardWrapper, value);
+        });
+
+        cardsContainer.appendChild(cardWrapper);
     });
 }
 
 function selectCard(selectedCard, value) {
-    if (hasRevealed) {
-        return;
-    }
-    
-    // Ensure only one card is selected at a time
-    document.querySelectorAll('.card').forEach(card => {
-        card.classList.remove('selected');
-    });
-
+    if (hasRevealed) return;
+    document.querySelectorAll('.card').forEach(card => card.classList.remove('selected'));
     myVote = value;
-    selectedCard.classList.add('selected'); // Adds the visual feedback instantly
-    
+    selectedCard.classList.add('selected');
     socket.emit('vote', { room: currentRoom, username: myUsername, vote: myVote });
 }
 
-function displayVotes() {
-    votesDisplay.innerHTML = '';
-    const participants = Object.keys(allVotes);
-    participants.forEach(user => {
-        const voteCard = document.createElement('div');
-        voteCard.classList.add('vote-card');
-        voteCard.textContent = allVotes[user] || '?';
-        votesDisplay.appendChild(voteCard);
-    });
+function generateAvatar(name) {
+    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase();
+    const hue = (name.charCodeAt(0) * 40) % 360;
+    return `<span class="avatar" style="background-color: hsl(${hue}, 70%, 60%)">${initials}</span>`;
 }
 
 function updateParticipantsList() {
     participantsListDiv.innerHTML = '';
     const participants = Object.keys(allVotes);
-
     if (participants.length === 0) {
         participantsListDiv.textContent = 'No participants yet...';
         return;
     }
-
     participants.forEach(user => {
-        const participantSpan = document.createElement('span');
-        participantSpan.classList.add('participant');
-        participantSpan.textContent = user;
-        
+        const participantDiv = document.createElement('div');
+        participantDiv.classList.add('participant-entry');
+        participantDiv.innerHTML = generateAvatar(user) +
+            `<span class="participant-name">${user}</span>`;
         if (allVotes[user] === null) {
-            const loaderSpan = document.createElement('span');
-            loaderSpan.classList.add('loader');
-            participantSpan.appendChild(loaderSpan);
-        } else if (allVotes[user]) {
-            participantSpan.classList.add('has-voted');
+            participantDiv.classList.add('waiting');
+        } else {
+            participantDiv.classList.add('has-voted');
         }
+        participantsListDiv.appendChild(participantDiv);
+    });
+}
 
-        participantsListDiv.appendChild(participantSpan);
+function displayVotes() {
+    votesDisplay.innerHTML = '';
+    Object.entries(allVotes).forEach(([user, vote]) => {
+        const voteCard = document.createElement('div');
+        voteCard.classList.add('vote-card');
+        voteCard.textContent = vote || '?';
+        votesDisplay.appendChild(voteCard);
     });
 }
 
 function displayVoteSummary() {
     voteSummaryDiv.innerHTML = '';
-    const validVotes = Object.values(allVotes)
-        .filter(vote => !isNaN(parseInt(vote)))
-        .map(vote => parseInt(vote));
-
-    if (validVotes.length === 0) {
-        return;
-    }
-
-    const sum = validVotes.reduce((acc, curr) => acc + curr, 0);
-    const average = (sum / validVotes.length).toFixed(1);
-
-    validVotes.sort((a, b) => a - b);
-    let median;
-    const mid = Math.floor(validVotes.length / 2);
-    if (validVotes.length % 2 === 0) {
-        median = (validVotes[mid - 1] + validVotes[mid]) / 2;
-    } else {
-        median = validVotes[mid];
-    }
-    
-    voteSummaryDiv.innerHTML = `
-        <p><strong>Average:</strong> ${average}</p>
-        <p><strong>Median:</strong> ${median}</p>
-    `;
+    const votes = Object.values(allVotes).map(v => parseInt(v)).filter(v => !isNaN(v));
+    if (!votes.length) return;
+    const avg = (votes.reduce((a, b) => a + b) / votes.length).toFixed(1);
+    votes.sort((a, b) => a - b);
+    const mid = Math.floor(votes.length / 2);
+    const median = votes.length % 2 ? votes[mid] : ((votes[mid - 1] + votes[mid]) / 2).toFixed(1);
+    voteSummaryDiv.innerHTML = `<p><strong>Average:</strong> ${avg}</p><p><strong>Median:</strong> ${median}</p>`;
 }
 
 function updateUI() {
     updateParticipantsList();
+    hasRevealed ? displayVotes() : votesDisplay.innerHTML = '';
+    hasRevealed ? displayVoteSummary() : voteSummaryDiv.innerHTML = '';
+    document.getElementById('control-buttons').classList.toggle('hidden', !isFacilitator);
+    facilitatorDisplay.textContent = currentFacilitator ? `Facilitator: ${currentFacilitator}` : '';
 
-    if (hasRevealed) {
-        displayVotes();
-        displayVoteSummary();
-    } else {
-        votesDisplay.innerHTML = '';
-        voteSummaryDiv.innerHTML = '';
-    }
-
-    if (isFacilitator) {
-        document.getElementById('control-buttons').classList.remove('hidden');
-    } else {
-        document.getElementById('control-buttons').classList.add('hidden');
-    }
-
-    if (currentFacilitator) {
-        facilitatorDisplay.textContent = `Facilitator: ${currentFacilitator}`;
-    } else {
-        facilitatorDisplay.textContent = '';
-    }
-    
-    const allCards = document.querySelectorAll('.card');
-    allCards.forEach(card => {
+    document.querySelectorAll('.card').forEach(card => {
         if (hasRevealed) {
             card.classList.add('revealed');
-            card.classList.remove('selected');
         } else {
             card.classList.remove('revealed');
-            // FIX: This re-selects the card if a vote has been made
-            if (myVote !== null && card.textContent === myVote) {
-                card.classList.add('selected');
-            } else {
-                card.classList.remove('selected');
-            }
+            const val = card.querySelector('.back').textContent;
+            card.classList.toggle('selected', val === myVote);
         }
     });
 }
 
-// --- Game control functions ---
 function revealVotes() {
-    if (hasRevealed || !isFacilitator) {
-        return;
-    }
-    socket.emit('revealVotes', { room: currentRoom });
+    if (!hasRevealed && isFacilitator) socket.emit('revealVotes', { room: currentRoom });
 }
 
 function resetGame() {
-    if (!isFacilitator) {
-        return;
-    }
-
-    const confirmed = confirm("Are you sure you want to reset the game? This will clear all votes.");
-
-    if (confirmed) {
+    if (!isFacilitator) return;
+    if (confirm("Are you sure you want to reset the game? This will clear all votes.")) {
         socket.emit('resetGame', { room: currentRoom });
     }
 }
@@ -210,144 +168,59 @@ function shareRoom() {
     const roomUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoom}`;
     navigator.clipboard.writeText(roomUrl).then(() => {
         copyFeedbackSpan.style.opacity = 1;
-        setTimeout(() => {
-            copyFeedbackSpan.style.opacity = 0;
-        }, 1500);
-    }).catch(err => {
-        console.error('Failed to copy text: ', err);
+        setTimeout(() => copyFeedbackSpan.style.opacity = 0, 1500);
     });
 }
 
 function checkInputsAndProceed(roomName, username, emitEvent) {
-    if (!roomName) {
-        alert('Please enter a room name.');
-        return false;
-    }
-    if (!username) {
-        alert('Please enter your name.');
-        return false;
-    }
+    if (!roomName || !username) return alert('Room and name required');
     currentRoom = roomName;
     myUsername = username;
-    
-    saveUsername(myUsername);
-    saveRoom(currentRoom); // FIX: Save room name to localStorage
-
+    localStorage.setItem('pokerUsername', myUsername);
+    localStorage.setItem('pokerRoom', currentRoom);
     socket.emit(emitEvent, { room: currentRoom, username: myUsername });
-    
     currentRoomNameSpan.textContent = currentRoom;
     roomSelectionDiv.style.display = 'none';
     gameAreaDiv.style.display = 'block';
     createCards();
-
     return true;
 }
 
-// --- Event Listeners for our buttons ---
-createRoomBtn.addEventListener('click', () => {
-    const roomName = createRoomNameInput.value.trim();
-    const username = usernameInput.value.trim();
-    checkInputsAndProceed(roomName, username, 'createRoom');
-});
-
-joinRoomBtn.addEventListener('click', () => {
-    const roomName = joinRoomNameInput.value.trim();
-    const username = usernameInput.value.trim();
-    checkInputsAndProceed(roomName, username, 'joinRoom');
-});
-
+createRoomBtn.addEventListener('click', () => checkInputsAndProceed(createRoomNameInput.value.trim(), usernameInput.value.trim(), 'createRoom'));
+joinRoomBtn.addEventListener('click', () => checkInputsAndProceed(joinRoomNameInput.value.trim(), usernameInput.value.trim(), 'joinRoom'));
 shareBtn.addEventListener('click', shareRoom);
 revealBtn.addEventListener('click', revealVotes);
 resetBtn.addEventListener('click', resetGame);
 
-// --- Dark Mode Logic ---
-function toggleTheme() {
-    const isDarkMode = rootElement.classList.toggle('dark-theme');
-    localStorage.setItem('pokerTheme', isDarkMode ? 'dark' : 'light');
-    themeLabel.textContent = isDarkMode ? 'Dark Mode' : 'Light Mode';
-}
+darkModeToggle?.addEventListener('change', () => {
+    const isDark = rootElement.classList.toggle('dark-theme');
+    themeLabel.textContent = isDark ? 'Dark Mode' : 'Light Mode';
+    localStorage.setItem('pokerTheme', isDark ? 'dark' : 'light');
+});
 
-function loadTheme() {
+(function initOnLoad() {
     const savedTheme = localStorage.getItem('pokerTheme');
-    const isDarkMode = savedTheme === 'dark';
-    rootElement.classList.toggle('dark-theme', isDarkMode);
-    darkModeToggle.checked = isDarkMode;
-    themeLabel.textContent = isDarkMode ? 'Dark Mode' : 'Light Mode';
-}
-
-// Add event listener to the toggle switch
-if (darkModeToggle) {
-    darkModeToggle.addEventListener('change', toggleTheme);
-}
-
-// --- New code to handle URL and localStorage ---
-function saveUsername(username) {
-    try {
-        localStorage.setItem('pokerUsername', username);
-    } catch (e) {
-        console.error('Error saving username to localStorage:', e);
+    if (savedTheme === 'dark') {
+        rootElement.classList.add('dark-theme');
+        darkModeToggle.checked = true;
+        themeLabel.textContent = 'Dark Mode';
     }
-}
 
-function loadUsername() {
-    try {
-        const savedUsername = localStorage.getItem('pokerUsername');
-        if (savedUsername) {
-            usernameInput.value = savedUsername;
-        }
-    } catch (e) {
-        console.error('Error loading username from localStorage:', e);
-    }
-}
-
-function saveRoom(room) {
-    try {
-        localStorage.setItem('pokerRoom', room);
-    } catch (e) {
-        console.error('Error saving room to localStorage:', e);
-    }
-}
-
-function rejoinRoomOnLoad() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomFromUrl = urlParams.get('room');
     const savedUsername = localStorage.getItem('pokerUsername');
     const savedRoom = localStorage.getItem('pokerRoom');
+    const urlRoom = new URLSearchParams(window.location.search).get('room');
 
-    if (savedUsername && savedRoom) {
-        currentRoom = savedRoom;
+    if (savedUsername) usernameInput.value = savedUsername;
+    if (urlRoom) joinRoomNameInput.value = urlRoom;
+
+    const room = urlRoom || savedRoom;
+    if (room && savedUsername) {
+        currentRoom = room;
         myUsername = savedUsername;
-        
         socket.emit('joinRoom', { room: currentRoom, username: myUsername });
-
-        currentRoomNameSpan.textContent = currentRoom;
-        roomSelectionDiv.style.display = 'none';
-        gameAreaDiv.style.display = 'block';
-        createCards();
-    } else if (roomFromUrl && savedUsername) {
-        currentRoom = roomFromUrl;
-        myUsername = savedUsername;
-
-        socket.emit('joinRoom', { room: currentRoom, username: myUsername });
-
         currentRoomNameSpan.textContent = currentRoom;
         roomSelectionDiv.style.display = 'none';
         gameAreaDiv.style.display = 'block';
         createCards();
     }
-}
-
-function checkUrlForRoomName() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomNameFromUrl = urlParams.get('room');
-
-    if (roomNameFromUrl) {
-        joinRoomNameInput.value = roomNameFromUrl;
-    }
-}
-
-// Run these functions when the page loads
-loadUsername();
-checkUrlForRoomName();
-loadTheme();
-rejoinRoomOnLoad(); // FIX: Call this function on page load
+})();
